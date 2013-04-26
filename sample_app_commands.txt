@@ -1,0 +1,398 @@
+---------------------------------------------------------------------
+commands used while building out tutorial sample_app, and some code
+---------------------------------------------------------------------
+
+-------------- final Gemfile ------------------------
+source 'https://rubygems.org'
+ruby '2.0.0'
+
+gem 'rails', '4.0.0.beta1'
+gem 'bootstrap-sass', '2.3.0.1'
+gem 'bcrypt-ruby', '3.0.1'
+gem 'faker', '1.1.2'
+gem 'will_paginate', '3.0.4'
+gem 'bootstrap-will_paginate', '0.0.9'
+
+group :development, :test do
+  gem 'sqlite3', '1.3.7'
+  gem 'rspec-rails', '2.13.0'
+  gem 'guard-rspec', '2.5.0'
+  gem 'spork-rails', github: 'railstutorial/spork-rails'
+  gem 'guard-spork', '1.5.0'
+end
+
+group :test do
+  gem 'selenium-webdriver', '2.0'
+  gem 'capybara', '2.1.0.beta1'
+  gem 'factory_girl_rails', '4.2.0'
+  gem 'cucumber-rails', '1.3.0', :require => false
+  gem 'database_cleaner', github: 'bmabey/database_cleaner'
+
+  # Uncomment these lines on OS X.
+  # gem 'rb-fsevent', '0.9.3', :require => false
+  # gem 'growl', '1.0.3'
+
+  # Uncomment these lines on Linux.
+  # gem 'rb-inotify', '0.9.0'
+  # gem 'libnotify', '0.8.0'
+
+  # Uncomment these lines on Windows.
+  # gem 'rb-fchange', '0.0.6'
+  # gem 'rb-notifu', '0.0.4'
+  # gem 'win32console', '1.3.2'
+end
+
+group :assets do
+  gem 'sass-rails',   '4.0.0.beta1'
+  gem 'coffee-rails', '4.0.0.beta1'
+  gem 'uglifier', '1.0.3'
+end
+
+gem 'jquery-rails', '2.2.1'
+gem 'turbolinks', '1.0.0'
+gem 'jbuilder', '1.0.1'
+
+group :production do
+  gem 'pg', '0.14.1'
+end
+
+
+
+-------------- Chapter 3 Mostly static pages ------------------------
+
+$ cd ~/rails_projects
+$ rails new sample_app --skip-test-unit
+$ cd sample_app
+
+$ bundle update
+$ bundle install --without production
+
+$ rails generate rspec:install
+
+$ git init
+$ git add .
+$ git commit -m "Initial commit"
+
+$ git mv README.rdoc README.md
+$ git commit -am "Improve the README"
+
+$ git remote add origin https://github.com/<username>/sample_app.git
+$ git push -u origin master
+
+config/environments/production.rb:
+SampleApp::Application.configure do
+  .
+  .
+  config.serve_static_assets = true
+  .
+  .
+end
+
+$ git commit -am "Serve static assets"
+$ heroku create 
+$ git push heroku master
+
+$ git push
+$ git push heroku
+
+$ heroku logs
+
+$ subl .
+
+$ git checkout -b static-pages
+
+$ rails generate controller StaticPages home help --no-test-framework
+
+$ git add .
+$ git commit -m "Add a StaticPages controller"
+
+$ rails generate integration_test static_pages
+
+spec/requests/static_pages_spec.rb:
+require 'spec_helper'
+
+describe "Static pages" do
+
+  describe "Home page" do
+
+    it "should have the content 'Sample App'" do
+      visit '/static_pages/home'
+      expect(page).to have_content('Sample App')
+    end
+  end
+end
+
+$ bundle exec rspec spec/requests/static_pages_spec.rb
+
+$ mv app/views/layouts/application.html.erb foobar   # temporary change
+
+$ mv foobar app/views/layouts/application.html.erb
+
+$ git add .
+$ git commit -m "Finish static pages"
+
+$ git checkout master
+$ git merge static-pages
+
+$ git push
+
+$ git push heroku
+
+
+-------------- Chapter 5 Filling in the layout ------------------------
+
+$ git checkout -b filling-in-layout
+
+$ touch app/assets/stylesheets/custom.css.scss
+
+$ bundle exec rspec spec/requests/static_pages_spec.rb
+
+$ rails generate controller Users new --no-test-framework
+      create  app/controllers/users_controller.rb
+       route  get "users/new"
+      invoke  erb
+      create    app/views/users
+      create    app/views/users/new.html.erb
+      invoke  helper
+      create    app/helpers/users_helper.rb
+      invoke  assets
+      invoke    coffee
+      create      app/assets/javascripts/users.js.coffee
+      invoke    scss
+      create      app/assets/stylesheets/users.css.scss
+
+$ rails generate integration_test user_pages
+
+$ git add .
+$ git commit -m "Finish layout and routes"
+$ git checkout master
+$ git merge filling-in-layout
+$ git push
+$ git push heroku
+$ heroku open
+$ heroku logs
+
+
+-------------- Chapter 6 Modeling users ------------------------
+
+$ git checkout master
+$ git checkout -b modeling-users
+
+$ rails generate controller Users new --no-test-framework
+
+$ rails generate model User name:string email:string
+      invoke  active_record
+      create    db/migrate/[timestamp]_create_users.rb
+      create    app/models/user.rb
+      invoke    rspec
+      create      spec/models/user_spec.rb
+
+db/migrate/[timestamp]_create_users.rb:
+class CreateUsers < ActiveRecord::Migration
+  def change
+    create_table :users do |t|
+      t.string :name
+      t.string :email
+
+      t.timestamps
+    end
+  end
+end
+
+$ bundle exec rake db:migrate
+
+$ bundle exec rake db:rollback
+
+$ bundle exec rake db:migrate
+
+$ rails console --sandbox
+Loading development environment in sandbox
+Any modifications you make will be rolled back on exit
+>> 
+
+>> User.find_by_email("mhartl@example.com")
+=> #<User id: 1, name: "Michael Hartl", email: "mhartl@example.com",
+created_at: "2013-03-11 00:57:46", updated_at: "2013-03-11 00:57:46">
+
+>> User.find_by(email: "mhartl@example.com")
+=> #<User id: 1, name: "Michael Hartl", email: "mhartl@example.com",
+created_at: "2013-03-11 00:57:46", updated_at: "2013-03-11 00:57:46">
+
+>> user.errors.full_messages
+=> ["Name can't be blank"]
+
+>> "a" * 51
+=> "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+>> ("a" * 51).length
+=> 51
+
+>> %w[foo bar baz]
+=> ["foo", "bar", "baz"]
+>> addresses = %w[user@foo.COM THE_US-ER@foo.bar.org first.last@foo.jp]
+=> ["user@foo.COM", "THE_US-ER@foo.bar.org", "first.last@foo.jp"]
+>> addresses.each do |address|
+?>   puts address
+>> end
+user@foo.COM
+THE_US-ER@foo.bar.org
+first.last@foo.jp
+
+$ rails generate migration add_index_to_users_email
+(edit to:)
+db/migrate/[timestamp]_add_index_to_users_email.rb:
+class AddIndexToUsersEmail < ActiveRecord::Migration
+  def change
+    add_index :users, :email, unique: true
+  end
+end
+
+$ bundle exec rake db:migrate
+
+$ rails generate migration add_password_digest_to_users password_digest:string
+(creates:)
+db/migrate/[ts]_add_password_digest_to_users.rb:
+class AddPasswordDigestToUsers < ActiveRecord::Migration
+  def change
+    add_column :users, :password_digest, :string
+  end
+end
+
+$ bundle exec rake db:migrate
+$ bundle exec rake db:test:prepare
+$ bundle exec rspec spec/
+
+$ git add .
+$ git commit -m "Make a basic User model (including secure passwords)"
+
+$ git checkout master
+$ git merge modeling-users
+
+
+-------------- Chapter 7 Sign up ------------------------
+
+$ git checkout master
+$ git checkout -b sign-up
+
+Env box (here note the different ways environments must be set in three scenarios:)
+  $ rails console test
+  Loading test environment
+  >> Rails.env
+  => "test"
+  >> Rails.env.test?
+  => true
+
+  $ rails server --environment production
+
+  $ bundle exec rake db:migrate RAILS_ENV=
+
+  $ heroku run console
+  Ruby console for yourapp.herokuapp.com
+  >> Rails.env
+  => "production"
+  >> Rails.env.production?
+  => true
+
+$ bundle exec rake db:reset
+$ bundle exec rake db:test:prepare
+
+$ bundle exec rspec spec/requests/user_pages_spec.rb -e "signup page"
+
+$ rails console
+>> User.find_by(email: "example@railstutorial.org")
+=> #<User id: 1, name: "Rails Tutorial", email: "example@railstutorial.org",
+created_at: "2013-03-12 05:51:34", updated_at: "2013-03-12 05:51:34",
+password_digest: "$2a$10$A58/j7wwh3aAffGkMAO9Q.jjh3jshd.6akhDKtchAz/R...">
+
+$ git add .
+$ git commit -m "Finish user signup"
+$ git checkout master
+$ git merge sign-up
+
+config/environments/production.rb:
+SampleApp::Application.configure do
+  .
+  .
+  # Force all access to the app over SSL, use Strict-Transport-Security,
+  # and use secure cookies.
+  config.force_ssl = true
+  .
+  .
+
+
+$ git commit -a -m "Add SSL in production"
+$ git push heroku
+$ heroku run rake db:migrate
+$ heroku open
+$ heroku logs
+
+
+-------------- Chapter 8 Sign in, sign out ------------------------
+
+$ git checkout -b sign-in-out
+
+$ rails generate controller Sessions --no-test-framework
+$ rails generate integration_test authentication_pages
+
+$ bundle exec rspec spec/requests/authentication_pages_spec.rb -e "signin with invalid information"
+
+$ rails generate migration add_remember_token_to_users
+
+db/migrate/[timestamp]_add_remember_token_to_users.rb:
+class AddRememberTokenToUsers < ActiveRecord::Migration
+  def change
+    add_column :users, :remember_token, :string
+    add_index  :users, :remember_token
+  end
+end
+
+$ bundle exec rake db:migrate
+$ bundle exec rake db:test:prepare
+$ bundle exec rspec spec/models/user_spec.rb
+
+$ git add .
+$ git commit -m "Finish sign in"
+$ git checkout master
+$ git merge sign-in-out
+
+$ git push
+$ git push heroku
+$ heroku run rake db:migrate
+
+$ heroku run console
+>> User.all.each { |user| user.save(validate: false) }
+
+
+-------------- Chapter 9 Updating, showing, and deleting users ------------------------
+
+$ git checkout -b updating-users
+
+$ bundle exec rspec spec/requests/user_pages_spec.rb -e "edit page"
+
+--- after adding gem 'faker', '1.1.2', and creating lib/tasks/sample_data.rake:
+$ bundle exec rake db:reset
+$ bundle exec rake db:populate
+$ bundle exec rake db:test:prepare
+
+$ rails generate migration add_admin_to_users admin:boolean
+
+$ bundle exec rake db:migrate
+$ bundle exec rake db:test:prepare
+
+$ rails console --sandbox
+>> user = User.first
+>> user.admin?
+=> false
+>> user.toggle!(:admin)
+=> true
+>> user.admin?
+=> true
+
+
+
+
+
+
+
+
+
+
