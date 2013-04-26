@@ -46,9 +46,12 @@ describe "User pages" do
           expect { click_link('delete') }.to change(User, :count).by(-1)
         end
         it { should_not have_link('delete', href: user_path(admin)) }
+        it "should not be able to delete self" do
+          expect { delete user_path(admin) }.to change(User, :count).by(0)
+        end
       end
     end
-    
+
   end
 
   describe "signup page" do
@@ -82,7 +85,7 @@ describe "User pages" do
           fill_in "Name",         with: ""
           fill_in "Email",        with: "test"
           fill_in "Password",     with: "foo"
-          fill_in "Confirmation", with: ""
+          fill_in "Confirm Password", with: ""
           click_button submit
         end
 
@@ -101,7 +104,7 @@ describe "User pages" do
         fill_in "Name",         with: "Example User"
         fill_in "Email",        with: "user@example.com"
         fill_in "Password",     with: "foobar"
-        fill_in "Confirmation", with: "foobar"
+        fill_in "Confirm Password", with: "foobar"
       end
 
       it "should create a user" do
@@ -154,6 +157,15 @@ describe "User pages" do
       it { should have_link('Sign out', href: signout_path) }
       specify { expect(user.reload.name).to  eql(new_name) }
       specify { expect(user.reload.email).to eql(new_email) }
+    end
+
+    describe "forbidden attributes" do
+      let(:params) do
+        { user: { admin: true, password: user.password, 
+                  password_confirmation: user.password } }
+      end
+      before { patch user_path(user), params }
+      specify { expect(user.reload).not_to be_admin }
     end
 
   end
